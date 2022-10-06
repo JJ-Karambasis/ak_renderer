@@ -1,5 +1,6 @@
 @echo off
 
+set ThirdPartyIncludePath=-I..\..\dependencies
 set RendererIncludePath=-I..\..\include
 
 set ExceptionFlags=-D_HAS_EXCEPTIONS=0 -GR-
@@ -10,6 +11,8 @@ IF NOT EXIST .\bin (
 )
 
 pushd .\bin
-cl %Common% %RendererIncludePath% -LD ..\..\source\ak_renderer.cpp -link user32.lib -out:ak_renderer.dll
+cl %Common% %RendererIncludePath% %ThirdPartyIncludePath% -DUNIT_TESTS ..\..\source\ak_renderer.cpp -link user32.lib Advapi32.lib -out:Tests.exe
+
+cl %Common% %RendererIncludePath% %ThirdPartyIncludePath% -LD ..\..\source\ak_renderer.cpp -link user32.lib Advapi32.lib -out:ak_renderer.dll
 cl %Common% %RendererIncludePath% ..\test_app.cpp -link ak_renderer.lib user32.lib -out:test_app.exe
 popd

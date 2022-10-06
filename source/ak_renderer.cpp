@@ -3,24 +3,145 @@
 
 #include <stdio.h>
 
+#define Debug_Log(msg, ...) do \
+{ \
+thread_context* Internal__ThreadContext = Get_Thread_Context(); \
+if(Internal__ThreadContext && Internal__ThreadContext->ScratchArena) \
+{ \
+arena* Scratch = Internal__ThreadContext->ScratchArena; \
+str8 Message = Str8_Format(Get_Thread_Context()->ScratchArena, msg, __VA_ARGS__); \
+GLogger.LogDebug((const char*)Message.Str, GLogger.UserData); \
+} \
+else \
+{ \
+char TempBuffer[2048]; \
+stbsp_snprintf(TempBuffer, 2048, (const char*)msg.Str, __VA_ARGS__); \
+GLogger.LogDebug(TempBuffer, GLogger.UserData); \
+} \
+} while(0)
+
+#define Info_Log(msg, ...) do \
+{ \
+thread_context* Internal__ThreadContext = Get_Thread_Context(); \
+if(Internal__ThreadContext && Internal__ThreadContext->ScratchArena) \
+{ \
+arena* Scratch = Internal__ThreadContext->ScratchArena; \
+str8 Message = Str8_Format(Get_Thread_Context()->ScratchArena, msg, __VA_ARGS__); \
+GLogger.LogInfo((const char*)Message.Str, GLogger.UserData); \
+} \
+else \
+{ \
+char TempBuffer[2048]; \
+stbsp_snprintf(TempBuffer, 2048, (const char*)msg.Str, __VA_ARGS__); \
+GLogger.LogInfo(TempBuffer, GLogger.UserData); \
+} \
+} while(0)
+
+#define Warning_Log(msg, ...) do \
+{ \
+thread_context* Internal__ThreadContext = Get_Thread_Context(); \
+if(Internal__ThreadContext && Internal__ThreadContext->ScratchArena) \
+{ \
+arena* Scratch = Internal__ThreadContext->ScratchArena; \
+str8 Message = Str8_Format(Get_Thread_Context()->ScratchArena, msg, __VA_ARGS__); \
+GLogger.LogWarning((const char*)Message.Str, GLogger.UserData); \
+} \
+else \
+{ \
+char TempBuffer[2048]; \
+stbsp_snprintf(TempBuffer, 2048, (const char*)msg.Str, __VA_ARGS__); \
+GLogger.LogWarning(TempBuffer, GLogger.UserData); \
+} \
+} while(0)
+
+#define Error_Log(msg, ...) do \
+{ \
+thread_context* Internal__ThreadContext = Get_Thread_Context(); \
+if(Internal__ThreadContext && Internal__ThreadContext->ScratchArena) \
+{ \
+arena* Scratch = Internal__ThreadContext->ScratchArena; \
+str8 Message = Str8_Format(Get_Thread_Context()->ScratchArena, msg, __VA_ARGS__); \
+GLogger.LogError((const char*)Message.Str, GLogger.UserData); \
+} \
+else \
+{ \
+char TempBuffer[2048]; \
+stbsp_snprintf(TempBuffer, 2048, (const char*)msg.Str, __VA_ARGS__); \
+GLogger.LogError(TempBuffer, GLogger.UserData); \
+} \
+} while(0)
+
+#define Bool_Check(type, condition, msg, ...) do \
+{ \
+if(!(condition)) \
+{ \
+type##_Log(msg, __VA_ARGS__); \
+return {}; \
+} \
+} \
+while(0)
+
+#define Bool_Warning_Check(condition, msg, ...) Bool_Check(Warning, condition, msg, __VA_ARGS__)
+#define Bool_Error_Check(condition, msg, ...) Bool_Check(Error, condition, msg, __VA_ARGS__)
+
 static void Default_Debug_Log(const char* Message, void* UserData)
 {
-    printf("DEBUG: %s\n", Message);
+    thread_context* ThreadContext = Get_Thread_Context();
+    if(ThreadContext && ThreadContext->ScratchArena)
+    {
+        str8 UTF8 = Str8_Format(ThreadContext->ScratchArena, Str8_Lit("DEBUG: %s\n"), Message);
+        str16 UTF16 = UTF8_To_UTF16(Get_Thread_Context()->ScratchArena, UTF8);
+        wprintf((const wchar_t*)UTF16.Str);
+    }
+    else
+    {
+        printf("DEBUG: %s\n", Message);
+    }
 }
 
 static void Default_Info_Log(const char* Message, void* UserData)
 {
-    printf("INFO: %s\n", Message);
+    thread_context* ThreadContext = Get_Thread_Context();
+    if(ThreadContext && ThreadContext->ScratchArena)
+    {
+        str8 UTF8 = Str8_Format(ThreadContext->ScratchArena, Str8_Lit("INFO: %s\n"), Message);
+        str16 UTF16 = UTF8_To_UTF16(Get_Thread_Context()->ScratchArena, UTF8);
+        wprintf((const wchar_t*)UTF16.Str);
+    }
+    else
+    {
+        printf("INFO: %s\n", Message);
+    }
 }
 
 static void Default_Warning_Log(const char* Message, void* UserData)
 {
-    printf("WARNING: %s\n", Message);
+    thread_context* ThreadContext = Get_Thread_Context();
+    if(ThreadContext && ThreadContext->ScratchArena)
+    {
+        str8 UTF8 = Str8_Format(ThreadContext->ScratchArena, Str8_Lit("WARNING: %s\n"), Message);
+        str16 UTF16 = UTF8_To_UTF16(Get_Thread_Context()->ScratchArena, UTF8);
+        wprintf((const wchar_t*)UTF16.Str);
+    }
+    else
+    {
+        printf("WARNING: %s\n", Message);
+    }
 }
 
 static void Default_Error_Log(const char* Message, void* UserData)
 {
-    printf("ERROR: %s\n", Message);
+    thread_context* ThreadContext = Get_Thread_Context();
+    if(ThreadContext && ThreadContext->ScratchArena)
+    {
+        str8 UTF8 = Str8_Format(ThreadContext->ScratchArena, Str8_Lit("ERROR: %s\n"), Message);
+        str16 UTF16 = UTF8_To_UTF16(Get_Thread_Context()->ScratchArena, UTF8);
+        wprintf((const wchar_t*)UTF16.Str);
+    }
+    else
+    {
+        printf("ERROR: %s\n", Message);
+    }
 }
 
 static void* Malloc_Allocate(size_t Size, void* UserData)
@@ -92,10 +213,15 @@ ak_renderer_init_result AK_Init_Renderer(const ak_renderer_init_parameters& Para
     
     GLogger.UserData = Parameters.LogUserData;
     
-    //GMainArena = Create_Async_Arena(&GAllocator);
-    //BOOL_CHECK(GMainArena, "Failed to create the renderer arena!");
+    async_arena* MainArena = Create_Async_Arena(&GAllocator, Megabyte(1));
+    Bool_Error_Check(MainArena, Str8_Lit("Failed to create the main async arena"));
     
+    thread_context* ThreadContext = MainArena->Push_Struct<thread_context>();
+    ThreadContext->MainArena = MainArena;
+    ThreadContext->ScratchArena = Create_Arena(MainArena, Megabyte(32));
+    Bool_Error_Check(ThreadContext->ScratchArena, Str8_Lit("Failed to create the scratch arena"));
     
+    Set_Thread_Context(ThreadContext);
     
 #ifdef _WIN32
     return Win32_Init_Renderer();
@@ -108,9 +234,42 @@ ak_device_context* AK_Set_Device(ak_device* Device)
     return NULL;
 }
 
+#ifdef UNIT_TESTS
+#define UTEST_IMPLEMENTATION
+#include <utest/utest.h>
+
+THREAD_CALLBACK(AsyncArenaTestCallback)
+{
+    async_arena* Arena = (async_arena*)UserData;
+    
+    random32 Random = Init_Random32();
+    for(uint32_t Index = 0; Index < 1000; Index++)
+    {
+        Arena->Push(Random.Random_Between(2, 128));
+    }
+    
+    return 0;
+}
+
+UTEST(Memory, AsyncArena)
+{
+    async_allocator Allocator = {};
+    Allocator.MemoryAllocate = Malloc_Allocate;
+    Allocator.MemoryFree = Malloc_Free;
+    async_arena* Arena = Create_Async_Arena(&Allocator, Gigabyte(1));
+    
+    for(uint32_t ThreadIndex = 0; ThreadIndex < 32; ThreadIndex++)
+    {
+        thread Thread = Create_Thread(AsyncArenaTestCallback, Arena);
+        Delete_Thread(Thread);
+    }
+}
+
+UTEST_MAIN();
+#endif
+
 #ifdef _WIN32
 #include "os/win32/win32_renderer.cpp"
 #endif
 
-//#include "util/ak_renderer_string.cpp"
-//#include "util/ak_renderer_memory.cpp"
+#include "util/ak_renderer_util.cpp"
