@@ -213,6 +213,45 @@ str8 Str8_Format(allocator* Allocator, const str8& Str, ...)
     return Result;
 }
 
+bool Str8_Equal(const str8& StrA, const str8& StrB, string_comparison_method Method)
+{
+    if(StrA.Length != StrB.Length) return false;
+    
+    if(Method == STRING_COMPARISION_METHOD_CASE_INSENSITIVE)
+    {
+        for(size_t i = 0; i < StrA.Length; i++)
+            if(To_Upper(StrA[i]) != To_Upper(StrB[i])) return false;
+    }
+    else
+    {
+        for(size_t i = 0; i < StrA.Length; i++)
+            if(StrA[i] != StrB[i]) return false;
+    }
+    
+    return true;
+}
+
+bool operator==(const str8& StrA, const str8& StrB)
+{
+    return Str8_Equal(StrA, StrB);
+}
+
+uint32_t Hash_Function(const str8& Str)
+{
+    size_t Result = 0;
+    size_t Rand1 = 31414;
+    size_t Rand2 = 27183;
+    
+    for(size_t Index = 0; Index < Str.Length; Index++)
+    {
+        Result *= Rand1;
+        Result += Str.Str[Index];
+        Rand1 *= Rand2;
+    }
+    
+    return Hash_Function(Result);
+}
+
 const uint16_t& str16::operator[](size_t Index) const
 {
     Assert(Index < Length);

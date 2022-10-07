@@ -3,6 +3,11 @@ static ak_renderer_init_result Win32_Init_Renderer()
     return VK_Init_Renderer();
 }
 
+static ak_device_context* Win32_Set_Device(ak_device* Device)
+{
+    return VK_Set_Device(Device);
+}
+
 #define AK__WIN32_SEMAPHORE_MAX_VALUE 512
 
 struct win32_thread_callback_data

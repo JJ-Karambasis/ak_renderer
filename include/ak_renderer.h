@@ -18,8 +18,8 @@ struct ak_device
 
 struct ak_device_list
 {
-    uint32_t   DeviceCount;
-    ak_device* Device;
+    uint32_t    DeviceCount;
+    ak_device** Devices;
 };
 
 struct ak_resource_manager
@@ -47,11 +47,13 @@ struct ak_cmd_buffer
 
 struct ak_device_context
 {
-    ak_device*           Device;
-    ak_resource_manager* ResourceManager;
-    ak_display_manager*  DisplayManager;
+    virtual ak_device* Get_Device() = 0;
+    virtual ak_resource_manager* Get_Resource_Manager() = 0;
+    virtual ak_display_manager* Get_Display_Manager() = 0;
+#if 0 
     virtual ak_cmd_buffer* Begin_Command_Recording() = 0;
     virtual bool Execute(const ak_cmd_buffer** CmdBuffers, uint32_t CmdBufferCount) = 0;
+#endif
 };
 
 typedef void* ak_renderer_memory_allocate(size_t Size, void* UserData);

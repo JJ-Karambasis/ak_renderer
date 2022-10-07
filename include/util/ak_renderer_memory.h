@@ -91,8 +91,12 @@ struct async_arena : public async_allocator
 
 static async_allocator GAllocator;
 
+static void* Memory_Copy(void* Dst, const void* Src, size_t Size);
 static void* Memory_Clear(void* Dst, size_t Size);
 static arena* Create_Arena(allocator* Allocator, size_t InitialBlockSize);
 static async_arena* Create_Async_Arena(async_allocator* Allocator, size_t InitialBlockSize);
+
+void* operator new(size_t Size, allocator* Arena);
+void* operator new(size_t Size, async_allocator* Arena);
 
 #endif //AK_RENDERER_MEMORY_H

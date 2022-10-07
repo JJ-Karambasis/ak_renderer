@@ -3,6 +3,12 @@
 
 #include <stb/stb_sprintf.h>
 
+enum string_comparison_method
+{
+    STRING_COMPARISION_METHOD_CASE_SENSITIVE,
+    STRING_COMPARISION_METHOD_CASE_INSENSITIVE
+};
+
 #define Str8_Lit(s) Str8((const uint8_t*)(u8##s), sizeof((u8##s))-1)
 struct str8
 {
@@ -18,6 +24,10 @@ str8   Str8_FormatV(allocator* Allocator, const uint8_t* Format, va_list Args);
 str8   Str8_Format(allocator* Allocator, const uint8_t* Format, ...);
 str8   Str8_FormatV(allocator* Allocator, const str8& Str, va_list Args);
 str8   Str8_Format(allocator* Allocator, const str8& Str, ...);
+bool   Str8_Equal(const str8& StrA, const str8& StrB, string_comparison_method Method = STRING_COMPARISION_METHOD_CASE_SENSITIVE);
+bool   operator==(const str8& StrA, const str8& StrB);
+
+uint32_t Hash_Function(const str8& Str);
 
 //NOTE(EVERYONE): UTF-16 string
 #define Str16_Lit(s) Str16((const uint16_t*)(u##s), (sizeof((u##s))/2) -1)

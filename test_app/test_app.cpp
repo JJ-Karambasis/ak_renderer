@@ -17,5 +17,12 @@ int main(int ArgCount, const char** Arguments)
         return 1;
     }
     
+    ak_device_context* DeviceContext = AK_Set_Device(InitResult.Devices.Devices[0]);
+    if(!DeviceContext)
+    {
+        Console_Log("Failed to initialize the device context!");
+        return 1;
+    }
+    
     return 0;
 }

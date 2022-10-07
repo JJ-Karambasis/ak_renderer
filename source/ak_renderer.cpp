@@ -8,8 +8,8 @@
 thread_context* Internal__ThreadContext = Get_Thread_Context(); \
 if(Internal__ThreadContext && Internal__ThreadContext->ScratchArena) \
 { \
-arena* Scratch = Internal__ThreadContext->ScratchArena; \
-str8 Message = Str8_Format(Get_Thread_Context()->ScratchArena, msg, __VA_ARGS__); \
+arena* Internal__ScratchArena = Internal__ThreadContext->ScratchArena; \
+str8 Message = Str8_Format(Internal__ScratchArena, msg, __VA_ARGS__); \
 GLogger.LogDebug((const char*)Message.Str, GLogger.UserData); \
 } \
 else \
@@ -25,8 +25,8 @@ GLogger.LogDebug(TempBuffer, GLogger.UserData); \
 thread_context* Internal__ThreadContext = Get_Thread_Context(); \
 if(Internal__ThreadContext && Internal__ThreadContext->ScratchArena) \
 { \
-arena* Scratch = Internal__ThreadContext->ScratchArena; \
-str8 Message = Str8_Format(Get_Thread_Context()->ScratchArena, msg, __VA_ARGS__); \
+arena* Internal__ScratchArena = Internal__ThreadContext->ScratchArena; \
+str8 Message = Str8_Format(Internal__ScratchArena, msg, __VA_ARGS__); \
 GLogger.LogInfo((const char*)Message.Str, GLogger.UserData); \
 } \
 else \
@@ -42,8 +42,8 @@ GLogger.LogInfo(TempBuffer, GLogger.UserData); \
 thread_context* Internal__ThreadContext = Get_Thread_Context(); \
 if(Internal__ThreadContext && Internal__ThreadContext->ScratchArena) \
 { \
-arena* Scratch = Internal__ThreadContext->ScratchArena; \
-str8 Message = Str8_Format(Get_Thread_Context()->ScratchArena, msg, __VA_ARGS__); \
+arena* Internal__ScratchArena = Internal__ThreadContext->ScratchArena; \
+str8 Message = Str8_Format(Internal__ScratchArena, msg, __VA_ARGS__); \
 GLogger.LogWarning((const char*)Message.Str, GLogger.UserData); \
 } \
 else \
@@ -59,8 +59,8 @@ GLogger.LogWarning(TempBuffer, GLogger.UserData); \
 thread_context* Internal__ThreadContext = Get_Thread_Context(); \
 if(Internal__ThreadContext && Internal__ThreadContext->ScratchArena) \
 { \
-arena* Scratch = Internal__ThreadContext->ScratchArena; \
-str8 Message = Str8_Format(Get_Thread_Context()->ScratchArena, msg, __VA_ARGS__); \
+arena* Internal__ScratchArena = Internal__ThreadContext->ScratchArena; \
+str8 Message = Str8_Format(Internal__ScratchArena, msg, __VA_ARGS__); \
 GLogger.LogError((const char*)Message.Str, GLogger.UserData); \
 } \
 else \
@@ -186,8 +186,7 @@ static void  Memory_Free_Aligned(void* Memory)
     Memory_Free(Memory);
 }
 
-extern "C" ak__shared_export 
-ak_renderer_init_result AK_Init_Renderer(const ak_renderer_init_parameters& Parameters)
+void Bind_Core(const ak_renderer_init_parameters& Parameters)
 {
     GAllocator.MemoryAllocate = Parameters.MemoryAllocate;
     GAllocator.MemoryFree = Parameters.MemoryFree;
@@ -212,16 +211,16 @@ ak_renderer_init_result AK_Init_Renderer(const ak_renderer_init_parameters& Para
     if(!GLogger.LogError) GLogger.LogError = Default_Error_Log;
     
     GLogger.UserData = Parameters.LogUserData;
+}
+
+extern "C" ak__shared_export 
+ak_renderer_init_result AK_Init_Renderer(const ak_renderer_init_parameters& Parameters)
+{
+    Bind_Core(Parameters);
     
     async_arena* MainArena = Create_Async_Arena(&GAllocator, Megabyte(1));
     Bool_Error_Check(MainArena, Str8_Lit("Failed to create the main async arena"));
-    
-    thread_context* ThreadContext = MainArena->Push_Struct<thread_context>();
-    ThreadContext->MainArena = MainArena;
-    ThreadContext->ScratchArena = Create_Arena(MainArena, Megabyte(32));
-    Bool_Error_Check(ThreadContext->ScratchArena, Str8_Lit("Failed to create the scratch arena"));
-    
-    Set_Thread_Context(ThreadContext);
+    Bool_Error_Check(Create_Thread_Context(MainArena), Str8_Lit("Failed to create the thread context"));
     
 #ifdef _WIN32
     return Win32_Init_Renderer();
@@ -231,7 +230,9 @@ ak_renderer_init_result AK_Init_Renderer(const ak_renderer_init_parameters& Para
 extern "C" ak__shared_export 
 ak_device_context* AK_Set_Device(ak_device* Device)
 {
-    return NULL;
+#ifdef _WIN32
+    return Win32_Set_Device(Device);
+#endif
 }
 
 #ifdef UNIT_TESTS
@@ -240,28 +241,41 @@ ak_device_context* AK_Set_Device(ak_device* Device)
 
 THREAD_CALLBACK(AsyncArenaTestCallback)
 {
+    thread_context ThreadContext = {};
+    ThreadContext.ScratchArena = Create_Arena(&GAllocator, Megabyte(32));
+    Set_Thread_Context(&ThreadContext);
+    
     async_arena* Arena = (async_arena*)UserData;
     
-    random32 Random = Init_Random32();
     for(uint32_t Index = 0; Index < 1000; Index++)
     {
-        Arena->Push(Random.Random_Between(2, 128));
+        Arena->Push(256);
     }
     
     return 0;
 }
 
+#define THREAD_COUNT 4
 UTEST(Memory, AsyncArena)
 {
-    async_allocator Allocator = {};
-    Allocator.MemoryAllocate = Malloc_Allocate;
-    Allocator.MemoryFree = Malloc_Free;
-    async_arena* Arena = Create_Async_Arena(&Allocator, Gigabyte(1));
+    Bind_Core({});
+    async_arena* Arena = Create_Async_Arena(&GAllocator, Gigabyte(1));
     
-    for(uint32_t ThreadIndex = 0; ThreadIndex < 32; ThreadIndex++)
+    thread Threads[THREAD_COUNT];
+    for(uint32_t ThreadIndex = 0; ThreadIndex < THREAD_COUNT; ThreadIndex++)
     {
-        thread Thread = Create_Thread(AsyncArenaTestCallback, Arena);
-        Delete_Thread(Thread);
+        Threads[ThreadIndex] = Create_Thread(AsyncArenaTestCallback, Arena);
+    }
+    for(uint32_t ThreadIndex = 0; ThreadIndex < THREAD_COUNT; ThreadIndex++)
+    {
+        Wait_Thread(Threads[ThreadIndex]);
+    }
+    
+    ASSERT_EQ(Arena->FirstBlock->Used, 1000*THREAD_COUNT*256);
+    
+    for(uint32_t ThreadIndex = 0; ThreadIndex < THREAD_COUNT; ThreadIndex++)
+    {
+        Delete_Thread(Threads[ThreadIndex]);
     }
 }
 

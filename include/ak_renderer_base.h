@@ -8,8 +8,8 @@
 #define thread_var __declspec(thread)
 #endif
 
-#define Min(a, b) (((a)>(b))?(a):(b))
-#define Max(a, b) (((a)<(b))?(a):(b))
+#define Max(a, b) (((a)>(b))?(a):(b))
+#define Min(a, b) (((a)<(b))?(a):(b))
 #define Abs(x) ((x) < 0 ? -(x) : (x))
 #define Clamp(Min, X, Max) ((V < Min) ? Min : ((V > Max) ? Max : V))
 #define Saturate(V) Clamp(0.0f, V, 1.0f)
