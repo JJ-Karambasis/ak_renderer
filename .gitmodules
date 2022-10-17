@@ -7,6 +7,3 @@
 [submodule "dependencies/utest"]
 	path = dependencies/utest
 	url = https://github.com/sheredom/utest.h.git
-[submodule "dependencies/glslang"]
-	path = dependencies/glslang
-	url = https://github.com/KhronosGroup/glslang.git
