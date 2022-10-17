@@ -279,6 +279,54 @@ UTEST(Memory, AsyncArena)
     }
 }
 
+THREAD_CALLBACK(AsyncPoolTestCallback)
+{
+    thread_context ThreadContext = {};
+    ThreadContext.ScratchArena = Create_Arena(&GAllocator, Megabyte(1));
+    Set_Thread_Context(&ThreadContext);
+    
+    async_pool<uint32_t>* Pool = (async_pool<uint32_t>*)UserData;
+    async_handle<uint32_t> Handles[1000];
+    
+    random32 Random32 = Init_Random32();
+    
+    for(uint32_t LoopIndex = 0; LoopIndex < 4; LoopIndex++)
+    {
+        for(uint32_t i = 0; i < 1000; i++)
+            Handles[i] = Pool->Allocate();
+        
+        Sleep(Random32.Random_Between(100, 1000));
+        
+        for(uint32_t i = 0; i < 1000; i++)
+            Pool->Free(Handles[i]);
+        
+        Sleep(Random32.Random_Between(100, 1000));
+    }
+    
+    return 0;
+}
+
+UTEST(Memory, AsyncPool)
+{
+    Bind_Core({});
+    async_pool<uint32_t> Pool = Create_Async_Pool<uint32_t>(&GAllocator, 512);
+    
+    thread Threads[THREAD_COUNT];
+    for(uint32_t ThreadIndex = 0; ThreadIndex < THREAD_COUNT; ThreadIndex++)
+    {
+        Threads[ThreadIndex] = Create_Thread(AsyncPoolTestCallback, &Pool);
+    }
+    for(uint32_t ThreadIndex = 0; ThreadIndex < THREAD_COUNT; ThreadIndex++)
+    {
+        Wait_Thread(Threads[ThreadIndex]);
+    }
+    
+    for(uint32_t ThreadIndex = 0; ThreadIndex < THREAD_COUNT; ThreadIndex++)
+    {
+        Delete_Thread(Threads[ThreadIndex]);
+    }
+}
+
 UTEST_MAIN();
 #endif
 

@@ -1,3 +1,34 @@
+template <typename type>
+auto_ptr<type>::auto_ptr(type* Pointer) : auto_ptr(Pointer, NULL) { }
+
+template <typename type>
+auto_ptr<type>::auto_ptr(type* Pointer, void* UserData) : Ptr(Pointer), PtrUserData(UserData)
+{ }
+
+
+template <typename type>
+bool auto_ptr<type>::operator!() const
+{
+    return !Ptr;
+}
+
+template <typename type>
+auto_ptr<type>::operator type*() const
+{
+    return Ptr;
+}
+
+template <typename type>
+auto_ptr<type>::~auto_ptr()
+{
+    if(Ptr)
+    {
+        Delete_Ptr(Ptr, PtrUserData);
+        Ptr = NULL;
+        PtrUserData = NULL;
+    }
+}
+
 void* arena::Push(size_t Size, memory_clear_flag ClearFlag)
 {
     if(!Size) return NULL;

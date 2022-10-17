@@ -4,6 +4,8 @@
 #include "util/ak_renderer_string.cpp"
 #include "util/ak_renderer_array.cpp"
 #include "util/ak_renderer_hash.cpp"
+#include "util/ak_renderer_async_pool.cpp"
+#include "ak_renderer_material_parser.cpp"
 
 static thread_var thread_context* GThreadContext;
 

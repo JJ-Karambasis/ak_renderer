@@ -42,6 +42,8 @@ VK_FUNCTION(vkGetDeviceProcAddr);
 VK_FUNCTION(vkCreateDevice);
 VK_FUNCTION(vkDestroySurfaceKHR);
 VK_FUNCTION(vkGetPhysicalDeviceSurfaceSupportKHR);
+VK_FUNCTION(vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
+VK_FUNCTION(vkGetPhysicalDeviceSurfaceFormatsKHR);
 
 #ifdef _WIN32
 VK_FUNCTION(vkCreateWin32SurfaceKHR);
@@ -50,6 +52,7 @@ VK_FUNCTION(vkCreateWin32SurfaceKHR);
 //Device level functions
 VK_FUNCTION(vkDestroyDevice);
 VK_FUNCTION(vkGetDeviceQueue);
+VK_FUNCTION(vkCreateSwapchainKHR);
 
 bool VK_Load_Global_Functions();
 bool VK_Load_Instance_Functions(VkInstance Instance);

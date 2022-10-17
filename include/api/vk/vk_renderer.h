@@ -10,10 +10,13 @@ struct vk_device;
 #include "vk_renderer_win32.h"
 #endif
 
+struct vk_device_context;
+
 #include "vk_renderer_display_manager.h"
 #include "vk_renderer_resource_manager.h"
 #include "vk_renderer_core.h"
 #include "vk_renderer_loader.h"
+#include "vk_renderer_shaders.h"
 
 struct vk_context
 {

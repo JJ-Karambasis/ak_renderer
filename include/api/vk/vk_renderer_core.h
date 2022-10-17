@@ -1,6 +1,13 @@
 #ifndef VK_RENDERER_CORE_H
 #define VK_RENDERER_CORE_H
 
+struct vk_sharing_mode
+{
+    VkSharingMode Mode;
+    uint32_t      QueueFamilyIndexCount;
+    uint32_t      QueueFamilyIndices[4];
+};
+
 struct vk_extension_manager
 {
     array<const char*> ExtensionsList;
@@ -47,5 +54,8 @@ static bool VK_Create_Instance();
 static bool VK_Load_Devices();
 static void VK_Delete_Device_Context();
 static vk_device_context* VK_Create_Device_Context(vk_device* Device);
+
+template <typename... args>
+vk_sharing_mode VK_Query_Sharing_Mode(args... Args);
 
 #endif

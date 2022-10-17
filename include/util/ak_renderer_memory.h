@@ -3,6 +3,21 @@
 #ifndef AK_RENDERER_MEMORY_H
 #define AK_RENDERER_MEMORY_H
 
+template <typename type>
+struct auto_ptr
+{
+    type* Ptr;
+    void* PtrUserData;
+    
+    auto_ptr(type* Pointer);
+    auto_ptr(type* Pointer, void* UserData);
+    
+    bool operator!() const;
+    operator type*() const;
+    
+    ~auto_ptr();
+};
+
 enum memory_clear_flag
 {
     MEMORY_CLEAR,

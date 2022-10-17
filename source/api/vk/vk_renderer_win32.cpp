@@ -35,8 +35,8 @@ static VkSurfaceKHR GDummySurface;
 
 static bool VK_Begin_Presentation_Engine_Detection_Support()
 {
-    WNDCLASS WindowClass = {};
-    WindowClass.lpfnWndProc = DefWindowProc;
+    WNDCLASSA WindowClass = {};
+    WindowClass.lpfnWndProc = DefWindowProcA;
     WindowClass.lpszClassName = "Win32_Dummy_Class";
     Bool_Warning_Check(RegisterClassA(&WindowClass), Str8_Lit("Failed to register the win32 dummy window class"));
     

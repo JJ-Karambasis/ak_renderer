@@ -20,6 +20,7 @@ static ak_renderer_init_result VK_Init_Renderer()
     Bool_Error_Check(VK_Create_Instance(), Str8_Lit("Failed to create the vulkan instance"));
     Bool_Error_Check(VK_Load_Instance_Functions(Context->Instance), Str8_Lit("Failed to load the instance vulkan functions"));
     Bool_Error_Check(VK_Load_Devices(), Str8_Lit("Failed to load the vulkan devices"));
+    Bool_Error_Check(VK_Init_Glslang(), Str8_Lit("Failed to initialize glslang"));
     
     ak_renderer_init_result Result = {};
     Result.Initialized = Context->Devices.DeviceCount > 0;
@@ -40,7 +41,11 @@ static vk_context* VK_Get_Context()
 
 #include "vk_renderer_loader.cpp"
 #include "vk_renderer_core.cpp"
+#include "vk_renderer_shaders.cpp"
 
 #ifdef _WIN32
 #include "vk_renderer_win32.cpp"
 #endif
+
+#include "vk_renderer_display_manager.cpp"
+#include "vk_renderer_resource_manager.cpp"

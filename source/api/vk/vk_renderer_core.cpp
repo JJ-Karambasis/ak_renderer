@@ -192,8 +192,8 @@ static bool VK_Load_Devices()
         
         if(AsyncComputeQueueFamilyIndex == (uint32_t)-1)
         {
-            //NOTE(EVERYONE): If we do not support async compute operations. Find the queue family index that 
-            //supports both compute and graphics operations
+            //NOTE(EVERYONE): If we do not support async compute operations. Find the queue
+            //family index that supports both compute and graphics operations
             for(uint32_t QueueFamilyIndex = 0; QueueFamilyIndex < QueueFamilyCount; QueueFamilyIndex++)
             {
                 bool HasGraphics = QueueFamilies[QueueFamilyIndex].queueFlags & VK_QUEUE_GRAPHICS_BIT;
@@ -337,6 +337,10 @@ QueueCreateInfoCount++; \
     else if(Device->PresentQueueFamilyIndex == Device->TransferQueueFamilyIndex) DeviceContext->PresentQueue = DeviceContext->AsyncTransferQueue;
     else if(Device->PresentQueueFamilyIndex == Device->ComputeQueueFamilyIndex) DeviceContext->PresentQueue = DeviceContext->AsyncComputeQueue;
     else vkGetDeviceQueue(DeviceContext->Device, Device->PresentQueueFamilyIndex, 0, &DeviceContext->PresentQueue);
+    
+    Bool_Warning_Check(VK_Init_Display_Manager(DeviceContext), Str8_Lit("Failed to initialize the vulkan display manager"));
+    Bool_Warning_Check(VK_Init_Resource_Manager(DeviceContext), 
+                       Str8_Lit("Failed to initialize the vulkan resource manager"));
     
     DeviceContext->PhysicalDevice = Device;
     

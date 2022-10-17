@@ -10,6 +10,7 @@ enum string_comparison_method
 };
 
 #define Str8_Lit(s) Str8((const uint8_t*)(u8##s), sizeof((u8##s))-1)
+#define Str8_Expand(s) {(const uint8_t*)s, sizeof(s)-1}
 struct str8
 {
     const uint8_t* Str;
@@ -28,6 +29,29 @@ bool   Str8_Equal(const str8& StrA, const str8& StrB, string_comparison_method M
 bool   operator==(const str8& StrA, const str8& StrB);
 
 uint32_t Hash_Function(const str8& Str);
+
+struct str8_node
+{
+    str8       String;
+    str8_node* Next;
+};
+
+struct str8_list
+{
+    str8_node* First;
+    str8_node* Last;
+    size_t      TotalLength;
+    uint32_t    NodeCount;
+    
+    void Push(str8_node* Node);
+    void Push(allocator* Allocator, const str8& Str);
+    void FormatV(allocator* Allocator, const uint8_t* Format, va_list Args);
+    void Format(allocator* Allocator, const uint8_t* Format, ...);
+    void FormatV(allocator* Allocator, const str8& Format, va_list Args);
+    void Format(allocator* Allocator, const str8& Format, ...);
+    
+    str8 Join(allocator* Allocator) const;
+};
 
 //NOTE(EVERYONE): UTF-16 string
 #define Str16_Lit(s) Str16((const uint16_t*)(u##s), (sizeof((u##s))/2) -1)

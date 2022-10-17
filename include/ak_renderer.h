@@ -11,6 +11,13 @@
 #include <windows.h>
 #endif
 
+template <typename type>
+struct ak_handle
+{
+    uint64_t ID;
+    inline bool Is_Null() const { return ID == 0; }
+};
+
 struct ak_device
 {
     const char* Name;
@@ -22,23 +29,21 @@ struct ak_device_list
     ak_device** Devices;
 };
 
+struct ak_display;
+struct ak_material;
+
 struct ak_resource_manager
 {
-};
-
-struct ak_display
-{
+    virtual ak_handle<ak_material> Create_Material(const char* Source, size_t SourceSize) = 0;
 };
 
 struct ak_display_manager
 {
-#if 0 
 #ifdef _WIN32
-    virtual ak_display* Create_Display(HWND Window) = 0;
+    virtual ak_handle<ak_display> Create_Display(HWND Window) = 0;
 #endif
-    virtual void Delete_Display(ak_display* Display);
-    virtual void Present(const ak_display** Displays, uint32_t DisplayCount) = 0;
-#endif
+    //virtual void Delete_Display(ak_display* Display);
+    //virtual void Present(const ak_display** Displays, uint32_t DisplayCount) = 0;
 };
 
 struct ak_cmd_buffer

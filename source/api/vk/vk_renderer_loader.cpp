@@ -18,6 +18,8 @@ bool VK_Load_Instance_Functions(VkInstance Instance)
     
     VK_Load_Instance_Function(vkDestroySurfaceKHR);
     VK_Load_Instance_Function(vkGetPhysicalDeviceSurfaceSupportKHR);
+    VK_Load_Instance_Function(vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
+    VK_Load_Instance_Function(vkGetPhysicalDeviceSurfaceFormatsKHR);
     
 #ifdef _WIN32
     VK_Load_Instance_Function(vkCreateWin32SurfaceKHR);
@@ -30,5 +32,6 @@ bool VK_Load_Device_Functions(VkDevice Device)
 {
     VK_Load_Device_Function(vkDestroyDevice);
     VK_Load_Device_Function(vkGetDeviceQueue);
+    VK_Load_Device_Function(vkCreateSwapchainKHR);
     return true;
 }
