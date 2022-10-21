@@ -84,6 +84,7 @@ static const double InfinityF64 = (float)0x7FF0000000000000;
 #include "ak_renderer_hash.h"
 #include "ak_renderer_async_pool.h"
 #include "ak_renderer_material_parser.h"
+#include "ak_renderer_cmd_buffer.h"
 
 struct thread_context
 {

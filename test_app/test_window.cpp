@@ -35,7 +35,7 @@ window Create_Window(ak_display_manager* DisplayManager, uint32_t Width, uint32_
         WNDCLASSA WindowClass = {};
         WindowClass.style = CS_OWNDC;
         WindowClass.hInstance = GetModuleHandle(0);
-        WindowClass.lpfnWndProc = DefWindowProcA;
+        WindowClass.lpfnWndProc = Win32__Window_Proc;
         WindowClass.lpszClassName = "Test_App";
         
         if(!RegisterClass(&WindowClass)) return {};

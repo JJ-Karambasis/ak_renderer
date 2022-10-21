@@ -51,8 +51,6 @@ async_handle<type> async_pool<type>::Allocate()
         
         Memory_Clear(&Entry->Entry, sizeof(type));
         Entry->EntryLock = {};
-        
-        Info_Log(Str8_Lit("Creating index %d Thread ID %d"), Index, GetCurrentThreadId());
     }
     PoolLock.Unlock();
     
@@ -125,8 +123,6 @@ void async_pool<type>::Free(async_handle<type>& Handle)
                 Entry->ID.NextEntry = FirstFreeIndex;
                 FirstFreeIndex = Handle.ID.Index;
                 Length--;
-                
-                Info_Log(Str8_Lit("Deleting index %d Thread ID %d"), Handle.ID.Index, GetCurrentThreadId());
             }
         }
         Entry->EntryLock.Unlock();

@@ -40,14 +40,15 @@ struct vk_device_context : public ak_device_context
     vk_resource_manager ResourceManager;
     vk_display_manager  DisplayManager;
     
+    uint32_t FrameCount;
+    uint32_t ClientFrameIndex;
+    
     ak_device* Get_Device() final;
     ak_resource_manager* Get_Resource_Manager() final;
     ak_display_manager* Get_Display_Manager() final;
     
-#if 0 
-    ak_cmd_buffer* Begin_Command_Recording() final;
-    bool Execute(const ak_cmd_buffer** CmdBuffers, uint32_t CmdBufferCount) final;
-#endif
+    ak_cmd_buffer* Allocate_Command_Buffer() final;
+    bool Execute(const ak_cmd_buffer* const* CmdBuffers, uint32_t CmdBufferCount) final;
 };
 
 static bool VK_Create_Instance();

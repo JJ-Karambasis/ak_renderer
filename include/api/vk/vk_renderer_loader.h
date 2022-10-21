@@ -53,6 +53,8 @@ VK_FUNCTION(vkCreateWin32SurfaceKHR);
 VK_FUNCTION(vkDestroyDevice);
 VK_FUNCTION(vkGetDeviceQueue);
 VK_FUNCTION(vkCreateSwapchainKHR);
+VK_FUNCTION(vkMapMemory);
+VK_FUNCTION(vkUnmapMemory);
 
 bool VK_Load_Global_Functions();
 bool VK_Load_Instance_Functions(VkInstance Instance);

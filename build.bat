@@ -2,7 +2,7 @@
 
 set OutputPath=%1
 set CurrentPath=%~dp0
-set CompileGlslang=1
+set CompileGlslang=0
 
 If not defined OutputPath (set OutputPath=.\test_app\bin)
 
@@ -24,9 +24,18 @@ IF %CompileGlslang% == 1 (
 
 	pushd %OutputPath%\glslang
 	
-	cl %Common% -wd4458 -wd4244 -wd4702 -wd4389 -wd4457 -wd4456 -wd4701 -wd4267 -wd4127 -DGLSLANG_VERSION_MAJOR=1 	-DGLSLANG_VERSION_MINOR=0 -DGLSLANG_VERSION_PATCH=0 -DGLSLANG_VERSION_FLAVOR=\"0\" -LD -c ^
+	cl %Common% -wd4458 -wd4244 -wd4702 -wd4389 -wd4457 -wd4456 -wd4701 -wd4267 -wd4127 -DGLSLANG_VERSION_MAJOR=1 	-DGLSLANG_VERSION_MINOR=0 -DGLSLANG_VERSION_PATCH=0 -DGLSLANG_VERSION_FLAVOR=\"0\" -DENABLE_OPT=0 -LD -c ^
+	%ThirdPartyPath%\glslang\StandAlone\ResourceLimits.cpp ^
+	%ThirdPartyPath%\glslang\StandAlone\StandAlone.cpp ^
+	%ThirdPartyPath%\glslang\SPIRV\disassemble.cpp ^
+	%ThirdPartyPath%\glslang\SPIRV\doc.cpp ^
 	%ThirdPartyPath%\glslang\SPIRV\GlslangToSpv.cpp ^
 	%ThirdPartyPath%\glslang\SPIRV\SpvBuilder.cpp ^
+	%ThirdPartyPath%\glslang\SPIRV\SpvTools.cpp ^
+	%ThirdPartyPath%\glslang\SPIRV\SpvPostProcess.cpp ^
+	%ThirdPartyPath%\glslang\SPIRV\SPVRemapper.cpp ^
+	%ThirdPartyPath%\glslang\SPIRV\InReadableOrder.cpp ^
+	%ThirdPartyPath%\glslang\SPIRV\Logger.cpp ^
 	%ThirdPartyPath%\glslang\SPIRV\CInterface\spirv_c_interface.cpp ^
 	%ThirdPartyPath%\glslang\glslang\CInterface\glslang_c_interface.cpp ^
 	%ThirdPartyPath%\glslang\glslang\MachineIndependent\preprocessor\Pp.cpp ^

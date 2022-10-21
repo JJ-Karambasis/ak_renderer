@@ -1,39 +1,107 @@
-ak_handle<ak_material> vk_resource_manager::Create_Material(const char* Source, size_t SourceSize)
+ak_handle<ak_mesh> vk_resource_manager::Create_Mesh(ak_vertex_format VertexFormat, uint32_t VertexCount, ak_index_format IndexFormat, uint32_t IndexCount)
 {
-    arena* Scratch = Get_Thread_Context()->ScratchArena;
+#if 0 
+    VkBufferCreateInfo BufferCreateInfo = {};
+    BufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    BufferCreateInfo.size = GVertexFormatSizes[VertexFormat]*VertexCount;
+    BufferCreateInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    BufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     
-    material_parser Parser = Parse_Material(Scratch, Source, SourceSize);
-    Bool_Warning_Check(Parser.IsSuccessful, Str8_Lit("Failed to parse the material!"));
+    VkBuffer VertexBuffer;
+    VK_Warning_Check(vkCreateBuffer(DeviceContext->Device, &BufferCreateInfo, VK_NULL_HANDLE, &Buffer))
+#endif
     
-    str8 Common = Str8_Expand(G_ShaderCommonVK);
-    str8 VertexShaderTemplate = Str8_Expand(G_ModelVertexShaderVK);
-    str8 MaterialEval = VK_Convert_To_Glsl(&Parser, Scratch);
-    str8 FragmentShaderTemplate = Str8_Expand(G_LambertianFragmentShaderVK);
+    vk_buffer_heap_allocation VertexBuffer = VertexBufferHeap.Allocate(G_AKVertexFormatSizes[VertexFormat]*VertexCount);
+    Bool_Warning_Check(VertexBuffer.Get_Buffer(), Str8_Lit("Failed to allocate the vertex buffer"));
     
-    str8_list VertexShaderList = {};
-    VertexShaderList.Push(Scratch, Common);
-    VertexShaderList.Push(Scratch, VertexShaderTemplate);
+    vk_buffer_heap_allocation IndexBuffer = IndexBufferHeap.Allocate(G_AKIndexFormatSizes[IndexFormat]*IndexCount);
+    Bool_Warning_Check(IndexBuffer.Get_Buffer(), Str8_Lit("Failed to allocate the index buffer"));
     
-    str8_list FragmentShaderList = {};
-    FragmentShaderList.Push(Scratch, Common);
-    FragmentShaderList.Push(Scratch, MaterialEval);
-    FragmentShaderList.Push(Scratch, FragmentShaderTemplate);
+    async_handle<vk_mesh> Handle = Meshes.Allocate();
     
-    array<uint32_t> VertexShader = VK_Compile_Shader(Scratch, VertexShaderList.Join(Scratch), 
-                                                     GLSLANG_STAGE_VERTEX);
-    array<uint32_t> FragmentShader = VK_Compile_Shader(Scratch, FragmentShaderList.Join(Scratch), 
-                                                       GLSLANG_STAGE_FRAGMENT);
+    vk_mesh* Mesh = Meshes.Lock(Handle);
+    Mesh->VertexBuffer = VertexBuffer;
+    Mesh->IndexBuffer  = IndexBuffer;
+    Mesh->VertexFormat = VertexFormat;
+    Mesh->IndexFormat  = IndexFormat;
+    Mesh->VertexCount  = VertexCount;
+    Mesh->IndexCount   = IndexCount;
+    Meshes.Unlock(Handle);
     
-    Bool_Warning_Check(!VertexShader.Is_Empty(), Str8_Lit("Failed to compile the material vertex shader"));
-    Bool_Warning_Check(FragmentShader.Is_Empty(), Str8_Lit("Failed to compile the material fragment shader"));
+    ak_handle<ak_mesh> Result = {Handle.ID.ID};
+    return Result;
+}
+
+void vk_resource_manager::Upload_Mesh(ak_handle<ak_mesh> Mesh, void* Vertices, uint32_t VertexCount, uint32_t VertexOffset, void* Indices, uint32_t IndexCount, uint32_t IndexOffset)
+{
+    async_handle<vk_mesh> Handle = {};
+    Handle.ID.ID = Mesh.ID;
     
-    return {};
+    vk_mesh* VKMesh = Meshes.Lock(Handle);
+    if(VKMesh)
+    {
+        size_t VerticesSize = VertexCount*G_AKVertexFormatSizes[VKMesh->VertexFormat];
+        size_t IndicesSize = IndexCount*G_AKIndexFormatSizes[VKMesh->IndexFormat];
+        
+        vk_async_buffer_arena*     UploadArena = UploadArenas + DeviceContext->ClientFrameIndex;
+        vk_buffer_arena_allocation UploadAllocation = UploadArena->Push(VerticesSize+IndicesSize);
+        
+        uint8_t* MappedMemory;
+        if(vkMapMemory(DeviceContext->Device, UploadAllocation.Get_Memory(), UploadAllocation.Get_Memory_Offset(), UploadAllocation.Get_Size(), 0, (void**)&MappedMemory) == VK_SUCCESS)
+        {
+            Memory_Copy(MappedMemory, Vertices, VerticesSize);
+            Memory_Copy(MappedMemory+VerticesSize, Indices, IndicesSize);
+            
+            vkUnmapMemory(DeviceContext->Device, UploadAllocation.Get_Memory());
+            
+            vk_async_buffer_to_buffer_copy Copies[2] = {};
+            
+            Copies[0].SrcBuffer = UploadAllocation.Get_Buffer();
+            Copies[0].DstBuffer = VKMesh->VertexBuffer.Get_Buffer();
+            Copies[0].Copy.srcOffset = UploadAllocation.Get_Offset();
+            Copies[0].Copy.dstOffset = VKMesh->VertexBuffer.Get_Offset();
+            Copies[0].Copy.size = VerticesSize;
+            
+            Copies[1].SrcBuffer = UploadAllocation.Get_Buffer();
+            Copies[1].DstBuffer = VKMesh->IndexBuffer.Get_Buffer();
+            Copies[1].Copy.srcOffset = UploadAllocation.Get_Offset()+VerticesSize;
+            Copies[1].Copy.dstOffset = VKMesh->IndexBuffer.Get_Offset();
+            Copies[1].Copy.size = IndicesSize;
+            
+            AsyncBufferCopies[DeviceContext->ClientFrameIndex].Add_Range(Copies, 2);
+        }
+        else
+        {
+            Warning_Log(Str8_Lit("Failed to map the mesh upload memory for writing"));
+        }
+    }
+    Meshes.Unlock(Handle);
+}
+
+vk_async_buffer_heap Create_Async_Buffer_Heap(vk_device_context* DeviceContext, VkDeviceSize DefaultBlockSize, VkBufferUsageFlags Usage)
+{
+    vk_async_buffer_heap Result = {};
+    Result.DeviceContext = DeviceContext;
+    Result.BlockStorage = Create_Arena(Get_Thread_Context()->MainArena, Kilobyte(8));
+    Result.BlockUsage = Usage;
+    Result.DefaultBlockSize = DefaultBlockSize;
+    return Result;
+}
+
+bool VK_Init_Memory_Manager(vk_device_context* DeviceContext)
+{
+    vk_memory_manager* MemoryManager = &DeviceContext->ResourceManager.MemoryManager;
+    MemoryManager->DeviceContext = DeviceContext;
+    return true;
 }
 
 bool VK_Init_Resource_Manager(vk_device_context* DeviceContext)
 {
     vk_resource_manager* ResourceManager = &DeviceContext->ResourceManager;
     ResourceManager->DeviceContext = DeviceContext;
-    ResourceManager->Materials = Create_Async_Pool<vk_material>(Get_Thread_Context()->MainArena, 64);
+    Bool_Warning_Check(VK_Init_Memory_Manager(DeviceContext), Str8_Lit("Failed to initialize the vulkan memory manager"));
+    
+    ResourceManager->VertexBufferHeap = Create_Async_Buffer_Heap(DeviceContext, Megabyte(64), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    ResourceManager->Meshes = Create_Async_Pool<vk_mesh>(Get_Thread_Context()->MainArena, 64);
     return true;
 }

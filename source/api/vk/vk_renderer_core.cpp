@@ -13,6 +13,11 @@ ak_display_manager* vk_device_context::Get_Display_Manager()
     return &DisplayManager;
 }
 
+ak_cmd_buffer* vk_device_context::Allocate_Command_Buffer() 
+{
+    return ::Allocate_Command_Buffer();
+}
+
 void vk_extension_manager::Init(arena* Arena, VkExtensionProperties* Extensions, uint32_t ExtensionCount)
 {
     ExtensionsList = Allocate_Array<const char*>(Arena, ExtensionCount);

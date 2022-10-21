@@ -50,7 +50,7 @@ struct str8_list
     void FormatV(allocator* Allocator, const str8& Format, va_list Args);
     void Format(allocator* Allocator, const str8& Format, ...);
     
-    str8 Join(allocator* Allocator) const;
+    str8 Join(allocator* Allocator, bool Newline) const;
 };
 
 //NOTE(EVERYONE): UTF-16 string

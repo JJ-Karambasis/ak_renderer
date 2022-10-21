@@ -79,6 +79,7 @@ struct arena : public allocator
 struct temp_arena
 {
     arena_marker Marker;
+    temp_arena();
     temp_arena(arena* TempArena);
     void Begin(arena* TempArena);
     void End();

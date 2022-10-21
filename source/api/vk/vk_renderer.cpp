@@ -42,6 +42,7 @@ static vk_context* VK_Get_Context()
 #include "vk_renderer_loader.cpp"
 #include "vk_renderer_core.cpp"
 #include "vk_renderer_shaders.cpp"
+#include "vk_renderer_execute.cpp"
 
 #ifdef _WIN32
 #include "vk_renderer_win32.cpp"
@@ -49,3 +50,7 @@ static vk_context* VK_Get_Context()
 
 #include "vk_renderer_display_manager.cpp"
 #include "vk_renderer_resource_manager.cpp"
+
+#ifdef UNIT_TESTS
+#include "vk_renderer_tests.cpp"
+#endif

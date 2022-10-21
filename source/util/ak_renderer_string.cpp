@@ -252,6 +252,62 @@ uint32_t Hash_Function(const str8& Str)
     return Hash_Function(Result);
 }
 
+void str8_list::Push(str8_node* Node)
+{
+    SLL_Queue_Push(First, Last, Node);
+    TotalLength += Node->String.Length;
+    NodeCount++;
+}
+
+void str8_list::Push(allocator* Allocator, const str8& Str)
+{
+    str8_node* Node = (str8_node*)Allocator->MemoryAllocate(sizeof(str8_node), Allocator->UserData);
+    Memory_Clear(Node, sizeof(str8_node));
+    Node->String = Str;
+    Push(Node);
+}
+
+void str8_list::FormatV(allocator* Allocator, const uint8_t* Format, va_list Args)
+{
+    Push(Allocator, Str8_FormatV(Allocator, Format, Args));
+}
+
+void str8_list::Format(allocator* Allocator, const uint8_t* Format, ...)
+{
+    va_list List;
+    va_start(List, Format);
+    FormatV(Allocator, Format, List);
+    va_end(List);
+}
+
+void str8_list::FormatV(allocator* Allocator, const str8& Format, va_list Args)
+{
+    Push(Allocator, Str8_FormatV(Allocator, Format.Str, Args));
+}
+
+void str8_list::Format(allocator* Allocator, const str8& Format, ...)
+{
+    va_list List;
+    va_start(List, Format.Str);
+    FormatV(Allocator, Format.Str, List);
+    va_end(List);
+}
+
+str8 str8_list::Join(allocator* Allocator, bool Newline) const
+{
+    uint8_t* Buffer = (uint8_t*)Allocator->MemoryAllocate(sizeof(uint8_t)*(TotalLength+NodeCount+1), Allocator->UserData);
+    
+    uint8_t* At = Buffer;
+    for(str8_node* Node = First; Node; Node = Node->Next)
+    {
+        Memory_Copy(At, Node->String.Str, Node->String.Length*sizeof(uint8_t));
+        *At++ = '\n';
+        At += Node->String.Length;
+    }
+    Buffer[TotalLength+NodeCount] = 0;
+    return Str8(Buffer, TotalLength+NodeCount);
+}
+
 const uint16_t& str16::operator[](size_t Index) const
 {
     Assert(Index < Length);

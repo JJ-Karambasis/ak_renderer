@@ -147,6 +147,11 @@ void arena::Clear(memory_clear_flag ClearFlag)
     CurrentBlock = FirstBlock;
 }
 
+temp_arena::temp_arena()
+{
+    Marker = {};
+}
+
 temp_arena::temp_arena(arena* TempArena)
 {
     Begin(TempArena);
