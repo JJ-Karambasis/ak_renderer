@@ -33,9 +33,33 @@ struct vk_memory_allocation
     VkDeviceSize   Get_Offset();
 };
 
+struct vk_memory_heap
+{
+    vk_device_context* DeviceContext;
+    
+    VkMemoryHeap Heap;
+    arena* BlockStorage;
+    vk_memory_block* HeapBlocks;
+    vk_memory_entry* StorageBlocks;
+    vk_memory_entry* OrphanBlocks;
+    vk_memory_entry* FreeBlocks;
+    VkDeviceSize     InitialBlockSize;
+    spin_lock Lock;
+};
+
+enum 
+{
+    VK_MEMORY_ALLOCATE_FLAG_CPU_MEMORY = 1,
+    VK_MEMORY_ALLOCATE_FLAG_GPU_MEMORY = 2,
+};
+
 struct vk_memory_manager
 {
     vk_device_context* DeviceContext;
+    vk_memory_heap*    MemoryHeaps;
+    
+    vk_memory_allocation Allocate(const VkMemoryRequirements* MemoryRequirements);
+    void Free(vk_memory_allocation* Allocation);
 };
 
 struct vk_buffer_heap_block
@@ -71,9 +95,9 @@ struct vk_async_buffer_heap
     arena* BlockStorage;
     vk_buffer_heap_block* HeapBlocks;
     
-    vk_buffer_heap_block* StorageBlocks;
-    vk_buffer_heap_block* OrphanBlocks;
-    vk_buffer_heap_block* FreeBlocks;
+    vk_buffer_heap_entry* StorageBlocks;
+    vk_buffer_heap_entry* OrphanBlocks;
+    vk_buffer_heap_entry* FreeBlocks;
     VkBufferUsageFlags BlockUsage;
     VkDeviceSize DefaultBlockSize;
     spin_lock HeapLock;

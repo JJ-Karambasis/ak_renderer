@@ -1,3 +1,27 @@
+VkDeviceMemory vk_memory_allocation::Get_Memory()
+{
+    return MemoryEntry->Block->Memory;
+}
+
+VkDeviceSize vk_memory_allocation::Get_Size()
+{
+    return MemoryEntry->Size;
+}
+
+VkDeviceSize vk_memory_allocation::Get_Offset()
+{
+    return MemoryEntry->Offset;
+}
+
+vk_memory_allocation vk_memory_manager::Allocate(const VkMemoryRequirements* MemoryRequirements)
+{
+    
+}
+
+void vk_memory_manager::Free(vk_memory_allocation* Allocation)
+{
+}
+
 ak_handle<ak_mesh> vk_resource_manager::Create_Mesh(ak_vertex_format VertexFormat, uint32_t VertexCount, ak_index_format IndexFormat, uint32_t IndexCount)
 {
 #if 0 
@@ -90,8 +114,21 @@ vk_async_buffer_heap Create_Async_Buffer_Heap(vk_device_context* DeviceContext, 
 
 bool VK_Init_Memory_Manager(vk_device_context* DeviceContext)
 {
+    thread_context* ThreadContext = Get_Thread_Context();
+    
     vk_memory_manager* MemoryManager = &DeviceContext->ResourceManager.MemoryManager;
     MemoryManager->DeviceContext = DeviceContext;
+    MemoryManager->MemoryHeaps = ThreadContext->MainArena->Push_Array<vk_memory_heap>(DeviceContext->Device->MemoryProperties.memoryHeapCount);
+    
+    for(uint32_t MemoryHeapIndex = 0; MemoryHeapIndex < DeviceContext->Device->MemoryProperties.memoryHeapCount; MemoryHeapIndex++)
+    {
+        vk_memory_heap* Heap = MemoryManager->MemoryHeaps + MemoryHeapIndex;
+        Heap->DeviceContext = DeviceContext;
+        Heap->Heap = DeviceContext->Device->MemoryProperties.memoryHeaps[MemoryHeapIndex];
+        Heap->BlockStorage = Create_Arena(ThreadContext->MainArena, Kilobyte(8));
+        Heap->InitialBlockSize = Min(Megabyte(64), Heap->Heap.size);
+    }
+    
     return true;
 }
 
